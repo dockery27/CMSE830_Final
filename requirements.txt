@@ -1,0 +1,7 @@
+seaborn
+numpy
+pandas
+scikit-learn
+altair
+matplotlib
+lmfit
