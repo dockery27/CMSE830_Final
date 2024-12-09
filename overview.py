@@ -28,7 +28,7 @@ st.markdown(
         - Trends and Correlations - The relationship between different features and charge radius is explored.
         - Principle Components - A principal component analysis is performed on the numeric features in the dataset.
         - Regression - Regression is performed on a few key variables with clear trends relative to the charge radius.
-        - Random Forest - Evaluation of a random forest model to predict charge radius. This still needs to be included. 
+        - Random Forest - Evaluation of a random forest model to predict charge radius.
     2. **Data Science** - This page focuses on the technical background of the project. It starts by summarizing the 
     overall method used to analyze this data. Then specific issues are explored in tabs.
         - Data Cleaning - Three data sets were merged and missing data was handled. The specifics of this process is discussed.
