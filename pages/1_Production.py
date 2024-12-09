@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import altair as alt
 import lmfit 
 from lmfit.models import PowerLawModel, ConstantModel, PolynomialModel
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
 def create_biplot(X_scaled, feature_names, pc1=0, pc2=1, scale_arrows=5,title="Biplot"):
     # Perform SVD
@@ -64,11 +66,7 @@ scaler = StandardScaler()
 scaler.fit(df_no_unc_subset)
 standardized = scaler.transform(df_no_unc_subset)
 df_scaled = pd.DataFrame(standardized,columns=["radius_val","MASS EXCESS","BINDING ENERGY/A", "ATOMIC MASS", " half_life [s]"])
-df_scaled = pd.concat([df_scaled, df_no_unc[['z', 'n', 'a', 'N-Z', ' jp', ' decay', 'radioactive']]], axis=1)
-
-df_scaled_lowmass = df_scaled[df_scaled["n"] >= 18]
-df_scaled_lowmass = df_scaled_lowmass[df_scaled_lowmass["n"] <= 30]
-
+df_scaled = pd.concat([df_scaled, df_no_unc[['z', 'n', 'a', 'N-Z', ' jp', ' decay', 'radioactive', 'decay_encoded', 'spin', 'parity']]], axis=1)
 
 
 st.title("Modeling Nuclear Charge Radius")
@@ -202,11 +200,6 @@ with tab1:
                    mathematically.
         ''')
         
-    with st.expander("Half Life"):
-        st.write('''
-                 Not working now; need to update.
-        ''')
-        
     st.write('''
         The above plots show that the standard global trend of mass number strongly correlates with the charge radius values. 
         Interestingly, trends are also observed between the decay mode, mass excess, and binding energy per nucleon.
@@ -257,7 +250,7 @@ with tab3:
              A first attempt to construct an improved model is performed by  
              regressing the scatterplots that showed a clear relationship with charge radius. The charge radii vs mass number is 
              fit with a power law to compare to. Additionally, fits are performed on the atomic mass, mass excess, and binding energy.
-             ''')
+             ''')    
              
     with st.expander("Mass Number"):
         st.write('''
@@ -419,12 +412,40 @@ with tab3:
              
              Given all four models showed reasonable relationships, further improvements may be improved 
              by combining the inputs. A more advanced machine learning model will be useful to combine these features 
-             and some of the categorical features discussed earlier. Random forest models will be applicable to this 
-             situation and may achieve better results.
+             and some of the categorical features discussed earlier.
              ''')   
     
 with tab4:
-    st.write("Need to implement random forest model.")
+   
+    y = df_scaled["radius_val"]
+    X = df_scaled.drop(["radius_val", ' jp', ' decay',],axis=1)
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    forest = RandomForestRegressor().fit(X_train, y_train)
+    
+    score_list = []
+    for i in range(20):
+        forest = RandomForestRegressor().fit(X_train, y_train)
+        score = forest.score(X_test,y_test)
+        score_list.append(score)
+    
+    fig2 = plt.figure(figsize=(6,6))
+    plt.hist(score_list,bins=10)
+    plt.xlabel("R^2 Value", fontsize="large")
+    plt.ylabel("Count", fontsize="large")
+    
+    st.write('''
+             A random forest ensemble was created from the sklearn package. All numeric features 
+             in the dataset were included, and 100 trees were utilized. 80% of the data was 
+             used for training and 20% was used for testing.
+             ''')
+    
+    st.pyplot(fig2)
+    st.caption('''
+               The random forest was trained and evaluated on twenty different random splits 
+               of the data. A small spread in the R^2 values was found, and the results are the 
+               highest accuracy of any model trained here.
+               ''')
 
 st.markdown("### Conclusion")
 st.write('''
@@ -435,6 +456,7 @@ st.write('''
          the mass excess, half life, and binding energy that can also be used to predict the charge radius.
          
          By combining all of these features into a PCA, it was shown that linear combinations have the 
-         best effect in explaining variance. This suggests using a more advance machine learning model and a 
-         random forest model is being implemented.
+         best effect in explaining variance. This suggests using a more advance machine learning model, and a 
+         random forest model was implemented. The accuracy of this was compared to regression on several features 
+         and the standard A^(1/3) model with the random forest performing the best.
          ''')
